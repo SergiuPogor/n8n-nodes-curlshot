@@ -56,7 +56,7 @@ export class CurlShotApi implements ICredentialType {
 	// The usage endpoint is free: testing the key never uses a screenshot.
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL: '={{$credentials.baseUrl.replace(/\\/+$/, "")}}',
+			baseURL: '={{($credentials.baseUrl || "https://curlshot.com").replace(/\\/+$/, "")}}',
 			url: '/api/v1/usage',
 			method: 'GET',
 		},

@@ -36,6 +36,7 @@ import {
 	curlShotRequest,
 	downloadResultFile,
 	header,
+	parseJson,
 	type RawResponse,
 } from './transport';
 
@@ -246,7 +247,12 @@ async function render(
 		itemIndex: i,
 	});
 	if (output === 'link') {
-		const json = JSON.parse(response.body.toString('utf8')) as IDataObject;
+		const json = parseJson(response.body);
+		if (!json) {
+			throw new NodeOperationError(this.getNode(), 'CurlShot sent an answer that is not JSON', {
+				itemIndex: i,
+			});
+		}
 		return { json: { ...json, ...metaFromHeaders(response.headers) } };
 	}
 	const source = this.getNodeParameter('source', i) as Source;

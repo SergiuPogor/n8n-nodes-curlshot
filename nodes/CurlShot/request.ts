@@ -54,7 +54,12 @@ export function buildBulkRequestsFromUrls(
 	options: IDataObject,
 ): IDataObject[] {
 	const shared = cleanOptions(options);
-	return splitList(urlsText).map((url) => ({ url, format, ...shared }));
+	// One URL per line only: commas are valid inside URLs (`?fields=name,email`).
+	return urlsText
+		.split('\n')
+		.map((url) => url.trim())
+		.filter(Boolean)
+		.map((url) => ({ url, format, ...shared }));
 }
 
 /** Validate the JSON input of Create Bulk. Returns an error message, or the requests. */

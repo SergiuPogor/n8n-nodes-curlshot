@@ -80,6 +80,7 @@ function webhookContext(input: {
 	headers?: Record<string, string>;
 	params?: IDataObject;
 	secretKey?: string;
+	noRawBody?: boolean;
 }) {
 	const raw = JSON.stringify(input.body);
 	const res = { status: vi.fn(), json: vi.fn() };
@@ -92,7 +93,7 @@ function webhookContext(input: {
 	};
 	const context = {
 		getRequestObject: () => ({
-			rawBody: Buffer.from(raw),
+			rawBody: input.noRawBody ? undefined : Buffer.from(raw),
 			header: (name: string) => headers[name.toLowerCase()],
 		}),
 		getResponseObject: () => res,
@@ -128,6 +129,19 @@ describe('CurlShot Trigger', () => {
 
 		const result = await trigger.webhook.call(context);
 		expect(res.status).toHaveBeenCalledWith(401);
+		expect(result).toEqual({ noWebhookResponse: true });
+	});
+
+	it('answers 400 and does not start when the raw body is missing', async () => {
+		const raw = JSON.stringify(event);
+		const { context, res } = webhookContext({
+			body: event,
+			headers: signedHeaders(raw),
+			noRawBody: true,
+		});
+
+		const result = await trigger.webhook.call(context);
+		expect(res.status).toHaveBeenCalledWith(400);
 		expect(result).toEqual({ noWebhookResponse: true });
 	});
 

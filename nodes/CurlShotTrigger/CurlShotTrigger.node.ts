@@ -93,8 +93,17 @@ export class CurlShotTrigger implements INodeType {
 				});
 				return { noWebhookResponse: true };
 			}
-			const rawBody =
-				(req as unknown as { rawBody?: Buffer }).rawBody ?? Buffer.from(JSON.stringify(body));
+			// The signature covers the exact bytes CurlShot sent. Re-serialising the
+			// parsed body cannot reproduce them, so without the raw body we refuse.
+			const rawBody = (req as unknown as { rawBody?: Buffer }).rawBody;
+			if (!rawBody) {
+				res
+					.status(400)
+					.json({
+						error: 'The raw request body is not available, so the signature cannot be checked',
+					});
+				return { noWebhookResponse: true };
+			}
 			const check = verifyWebhookSignature({
 				rawBody,
 				secret,

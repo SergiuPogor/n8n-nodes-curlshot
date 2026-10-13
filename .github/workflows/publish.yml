@@ -17,22 +17,25 @@ name: Publish
 on:
   push:
     tags:
-      - '*.*.*'
+      # Plain semver release tags only (0.1.0), never 1.0.0-rc.1 or foo.bar.baz.
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   publish:
     name: Publish to npm
     runs-on: ubuntu-latest
+    # Every action, tool and package in this job is pinned: it can mint an
+    # OIDC token and holds the npm token. The scan runs in its own job.
     permissions:
       # Mints the OIDC token npm uses for the provenance attestation.
       id-token: write
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
           cache: 'npm'
@@ -40,7 +43,7 @@ jobs:
 
       # Trusted publishing (OIDC) needs npm 11.5 or later.
       - name: Update npm
-        run: npm install -g npm@11
+        run: npm install -g npm@11.21.0
 
       - name: Check the tag matches package.json
         run: |
@@ -65,10 +68,24 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: n8n community package scan
+  scan:
+    name: n8n community package scan
+    needs: publish
+    runs-on: ubuntu-latest
+    # No id-token and no secrets: this job only reads the published package.
+    permissions:
+      contents: read
+
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+
+      - name: Scan the published version
         run: |
           for attempt in 1 2 3 4 5 6; do
-            if npx -y @n8n/scan-community-package "n8n-nodes-curlshot@$GITHUB_REF_NAME" | tee scan.log && grep -q 'passed all security checks' scan.log; then
+            if npx -y @n8n/scan-community-package@0.39.0 "n8n-nodes-curlshot@$GITHUB_REF_NAME" | tee scan.log && grep -q 'passed all security checks' scan.log; then
               exit 0
             fi
             echo "Scan not passing yet (attempt $attempt); the registry may still be propagating."

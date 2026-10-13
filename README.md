@@ -36,7 +36,7 @@ Leave **Base URL** at `https://curlshot.com` unless support gives you another ad
 | PDF | Generate | Print a URL, HTML or Markdown to PDF (paper size, margins, landscape, one tall page) |
 | Video | Record | Record the page scrolling as MP4, WebM or GIF (duration, frame rate, scroll back) |
 | Job | Create | Render in the background. Optionally wait for the result, or have it sent to a webhook |
-| Job | Create Bulk | Queue up to 100 renders in one call, from a list of URLs or a JSON array |
+| Job | Create Bulk | Queue up to 100 renders in one call, from a list of URLs (one per line) or a JSON array |
 | Job | Get | Read a background job, and download its file once done |
 | Job | Get Batch | Read every job of one bulk call |
 | Device | Get Many | List the phone, tablet, laptop and desktop presets |
@@ -59,6 +59,8 @@ Starts a workflow when a background render finishes (`screenshot.completed` or `
 3. Activate the workflow that has the trigger.
 
 CurlShot attaches the webhook address to each job; nothing is registered on your account. **Verify Signature** is on by default. It checks the `x-signature` header (HMAC-SHA256 of `<x-timestamp>.<body>`, keyed with your secret key). It also refuses deliveries more than 5 minutes old, so a captured delivery can't be replayed. To download the file, add a CurlShot node with **Job → Get** and the `job_id` from the event.
+
+CurlShot retries a delivery that does not get a 2xx answer in time, so the same event can arrive more than once. If a step must not run twice for the same job (a database insert, an email), deduplicate on `job_id` first, for example with n8n's **Remove Duplicates** node set to *Remove items processed in previous executions*.
 
 ## Example workflows
 
@@ -93,6 +95,7 @@ The workflow uses the `NPM_TOKEN` repository secret. Once the package exists on 
 
 ## Resources
 
+- [Using CurlShot with n8n](https://curlshot.com/docs/integrations/n8n?utm_source=n8n&utm_medium=integration&utm_campaign=dist-q4)
 - [CurlShot API docs](https://curlshot.com/docs?utm_source=n8n&utm_medium=integration&utm_campaign=dist-q4)
 - [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
 

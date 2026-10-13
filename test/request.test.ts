@@ -49,10 +49,10 @@ describe('buildRenderBody', () => {
 });
 
 describe('bulk input', () => {
-	it('splits URLs on lines and commas and shares the options', () => {
+	it('splits URLs on lines and shares the options', () => {
 		expect(
 			buildBulkRequestsFromUrls(
-				'https://example.com\nhttps://example.org, https://example.net\n',
+				'https://example.com\n https://example.org \n\nhttps://example.net\n',
 				'pdf',
 				{
 					block_ads: true,
@@ -63,6 +63,12 @@ describe('bulk input', () => {
 			{ url: 'https://example.org', format: 'pdf', block_ads: true },
 			{ url: 'https://example.net', format: 'pdf', block_ads: true },
 		]);
+	});
+
+	it('keeps commas inside a URL', () => {
+		expect(
+			buildBulkRequestsFromUrls('https://example.com/report?fields=name,email', 'png', {}),
+		).toEqual([{ url: 'https://example.com/report?fields=name,email', format: 'png' }]);
 	});
 
 	it('accepts a JSON array given as text or as a value', () => {

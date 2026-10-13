@@ -371,7 +371,7 @@ export const jobProperties: INodeProperties[] = [
 		required: true,
 		default: '',
 		placeholder: 'https://example.com\nhttps://example.org',
-		description: 'Up to 100 URLs, one per line (commas also work)',
+		description: 'Up to 100 URLs, one per line',
 		displayOptions: { show: { resource: ['job'], operation: ['createBulk'], bulkMode: ['urls'] } },
 	},
 	{

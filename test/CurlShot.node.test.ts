@@ -100,6 +100,28 @@ describe('Screenshot → Take', () => {
 		expect(item.binary).toBeUndefined();
 	});
 
+	it('reports a non-JSON answer for Output Link as a node error, and continues on fail', async () => {
+		const params = {
+			resource: 'screenshot',
+			operation: 'take',
+			source: 'url',
+			url: 'https://example.com',
+			imageFormat: 'png',
+			output: 'link',
+		};
+		const respond = () => [
+			{ headers: { 'content-type': 'text/html' }, body: Buffer.from('<html>') },
+		];
+
+		await expect(run(executeContext({ params, respond: respond() }))).rejects.toThrow(
+			'CurlShot sent an answer that is not JSON',
+		);
+		const [[item]] = await run(
+			executeContext({ params, respond: respond(), continueOnFail: true }),
+		);
+		expect(item.json.error).toMatch(/not JSON/);
+	});
+
 	it('shows the API error message, code and upgrade link', async () => {
 		const ctx = executeContext({
 			params: {
