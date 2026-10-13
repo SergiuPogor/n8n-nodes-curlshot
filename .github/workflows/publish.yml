@@ -1,0 +1,77 @@
+# Publishes n8n-nodes-curlshot to npm with a provenance statement whenever a
+# version tag (for example 0.1.0) is pushed. n8n requires community nodes to
+# be published from GitHub Actions with provenance since 1 May 2026.
+#
+# Authentication, either of:
+#   - NPM_TOKEN repository secret: an npm granular access token with read and
+#     write access to n8n-nodes-curlshot (needed for the very first publish).
+#   - npm trusted publishing (OIDC): once the package exists, add this repo and
+#     workflow file (publish.yml) as a trusted publisher on npmjs.com and the
+#     secret can be deleted.
+#
+# Release: bump "version" in package.json on main (via a PR), then push a
+# tag with the same version: git tag 0.1.0 && git push origin 0.1.0
+
+name: Publish
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    permissions:
+      # Mints the OIDC token npm uses for the provenance attestation.
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing (OIDC) needs npm 11.5 or later.
+      - name: Update npm
+        run: npm install -g npm@11
+
+      - name: Check the tag matches package.json
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $version" >&2
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Typecheck and unit tests
+        run: |
+          npm run typecheck
+          npm test
+
+      - name: Publish with provenance
+        # `n8n-node release` in CI runs lint and build, then `npm publish`
+        # with NPM_CONFIG_PROVENANCE=true.
+        run: npm run release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: n8n community package scan
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            if npx -y @n8n/scan-community-package "n8n-nodes-curlshot@$GITHUB_REF_NAME" | tee scan.log && grep -q 'passed all security checks' scan.log; then
+              exit 0
+            fi
+            echo "Scan not passing yet (attempt $attempt); the registry may still be propagating."
+            sleep 30
+          done
+          exit 1
