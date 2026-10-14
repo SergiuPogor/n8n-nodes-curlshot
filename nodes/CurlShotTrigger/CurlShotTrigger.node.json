@@ -8,7 +8,7 @@
 			{ "url": "https://github.com/SergiuPogor/n8n-nodes-curlshot#credentials" }
 		],
 		"primaryDocumentation": [
-			{ "url": "https://github.com/SergiuPogor/n8n-nodes-curlshot#readme" }
+			{ "url": "https://curlshot.com/docs/integrations/n8n" }
 		]
 	}
 }

@@ -64,6 +64,10 @@ CurlShot retries a delivery that does not get a 2xx answer in time, so the same 
 
 ## Example workflows
 
+**Import a ready-made workflow:** download [`examples/daily-full-page-screenshot.json`](https://github.com/SergiuPogor/n8n-nodes-curlshot/blob/main/examples/daily-full-page-screenshot.json), then in n8n open a new workflow, choose **⋯ → Import from File** and pick it (or copy the file's contents and paste them onto the canvas). It takes a full-page PNG of a URL every day at 9:00; add your CurlShot credential, change the URL, and connect the `data` output to Slack, Gmail, Google Drive or S3.
+
+More ideas to build:
+
 - **Competitor pricing watch:** Schedule Trigger (daily) → CurlShot *Screenshot → Take* (`https://competitor.example/pricing`, Full Page) → Slack *Upload a file*.
 - **Save submitted pages as PDF:** Form Trigger → CurlShot *PDF → Generate* → Google Drive *Upload*.
 - **Weekly site archive:** Schedule Trigger → CurlShot *Job → Create Bulk* with your sitemap URLs and a webhook → CurlShot Trigger → CurlShot *Job → Get* → S3 *Upload*.

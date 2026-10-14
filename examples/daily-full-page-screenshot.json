@@ -1,0 +1,77 @@
+{
+	"name": "CurlShot: daily full-page screenshot",
+	"nodes": [
+		{
+			"parameters": {
+				"rule": {
+					"interval": [
+						{
+							"field": "days",
+							"triggerAtHour": 9
+						}
+					]
+				}
+			},
+			"id": "4f1c7a52-2d0e-4b1a-9a0c-6b1f6b0f6a01",
+			"name": "Every Day at 9:00",
+			"type": "n8n-nodes-base.scheduleTrigger",
+			"typeVersion": 1.2,
+			"position": [0, 0]
+		},
+		{
+			"parameters": {
+				"resource": "screenshot",
+				"operation": "take",
+				"source": "url",
+				"url": "https://example.com/pricing",
+				"imageFormat": "png",
+				"output": "binary",
+				"binaryPropertyName": "data",
+				"options": {
+					"full_page": true,
+					"block_cookie_banners": true,
+					"block_ads": true
+				}
+			},
+			"id": "4f1c7a52-2d0e-4b1a-9a0c-6b1f6b0f6a02",
+			"name": "Screenshot Pricing Page",
+			"type": "n8n-nodes-curlshot.curlShot",
+			"typeVersion": 1,
+			"position": [220, 0],
+			"credentials": {
+				"curlShotApi": {
+					"id": "",
+					"name": "CurlShot API"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"content": "## Daily full-page screenshot\n\n1. Add your **CurlShot API** credential (free key at curlshot.com, Dashboard → API keys).\n2. Change the URL in **Screenshot Pricing Page**.\n3. Connect the `data` binary output to Slack (*Upload a file*), Gmail (*Send*, attachment `data`), Google Drive (*Upload*) or S3 (*Upload*).",
+				"height": 260,
+				"width": 420
+			},
+			"id": "4f1c7a52-2d0e-4b1a-9a0c-6b1f6b0f6a03",
+			"name": "Sticky Note",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-60, -300]
+		}
+	],
+	"connections": {
+		"Every Day at 9:00": {
+			"main": [
+				[
+					{
+						"node": "Screenshot Pricing Page",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	}
+}

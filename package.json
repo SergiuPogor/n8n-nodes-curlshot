@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-curlshot",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Take website screenshots, PDFs and scrolling videos in n8n workflows with the CurlShot API.",
 	"license": "MIT",
 	"homepage": "https://curlshot.com/docs/integrations/n8n",
