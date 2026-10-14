@@ -6,7 +6,8 @@
 	"scripts": {
 		"setup": "node setup.mjs",
 		"record": "node record.mjs",
-		"encode": "sh encode.sh"
+		"encode": "sh encode.sh",
+		"teardown": "node teardown.mjs"
 	},
 	"dependencies": {
 		"playwright": "1.56.1"

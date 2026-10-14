@@ -14,7 +14,13 @@ export const config = {
 		email: 'demo@curlshot.com',
 		firstName: 'CurlShot',
 		lastName: 'Demo',
-		password: env.N8N_DEMO_PASSWORD ?? 'Demo-Recording-1',
+		// No committed default: a known password would open n8n to anything
+		// that reaches the port. Read lazily so teardown.mjs needs no password.
+		get password() {
+			const password = env.N8N_DEMO_PASSWORD;
+			if (!password) throw new Error('Set N8N_DEMO_PASSWORD to the owner password for the demo n8n.');
+			return password;
+		},
 	},
 	// A local Ollama model, so the recording needs no paid LLM key.
 	chatModel: {
@@ -38,5 +44,16 @@ export function readAccessKey() {
 	const file = env.CURLSHOT_KEY_FILE;
 	if (!file) throw new Error('Set CURLSHOT_KEY_FILE to a file holding the CurlShot access key.');
 	const raw = readFileSync(file, 'utf8').trim();
-	return raw.startsWith('{') ? JSON.parse(raw).accessKey : raw;
+	if (!raw.startsWith('{')) return raw;
+	let parsed;
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		// The SyntaxError message quotes the file, which would print part of the key.
+		throw new Error('CURLSHOT_KEY_FILE is not valid JSON.');
+	}
+	if (typeof parsed?.accessKey !== 'string' || !parsed.accessKey) {
+		throw new Error('CURLSHOT_KEY_FILE has no "accessKey" string.');
+	}
+	return parsed.accessKey;
 }
