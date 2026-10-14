@@ -14,7 +14,13 @@ export const config = {
 		email: 'demo@curlshot.com',
 		firstName: 'CurlShot',
 		lastName: 'Demo',
-		password: env.N8N_DEMO_PASSWORD ?? 'Demo-Recording-1',
+		// No committed default: a known password would open n8n to anything
+		// that reaches the port. Read lazily so teardown.mjs needs no password.
+		get password() {
+			const password = env.N8N_DEMO_PASSWORD;
+			if (!password) throw new Error('Set N8N_DEMO_PASSWORD to the owner password for the demo n8n.');
+			return password;
+		},
 	},
 	// A local Ollama model, so the recording needs no paid LLM key.
 	chatModel: {

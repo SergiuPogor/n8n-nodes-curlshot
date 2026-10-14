@@ -27,6 +27,7 @@ ripples show what is clicked. Playwright records the whole run with one
 ```bash
 cd scripts/demo-video
 npm install
+export N8N_DEMO_PASSWORD="$(openssl rand -base64 18)"   # owner password, required
 node setup.mjs                      # fresh n8n on :5678, owner + Ollama credential (not filmed)
 ollama run qwen2.5:7b "hi" >/dev/null   # load the model so the agent answers quickly
 CURLSHOT_KEY_FILE=/path/to/key.json node record.mjs   # writes out/take-<time>.webm
@@ -41,7 +42,8 @@ pasted into n8n's password field (dots only), which is also blurred.
 The browser runs headless by default; set `N8N_DEMO_HEADED=1` to watch it.
 `setup.mjs` deletes and recreates the `n8n-demo` container and `n8n_demo`
 volume each time, so every take starts from a clean n8n. n8n listens on
-`127.0.0.1` only, because the owner password in `config.mjs` is committed.
+`127.0.0.1` only. The owner password comes from `N8N_DEMO_PASSWORD` (there is
+no default), and `setup.mjs` and `record.mjs` must see the same value.
 Run `node teardown.mjs` once you have a good take: the volume stores the
 CurlShot credential until it is removed.
 

@@ -6,7 +6,9 @@
 import { execFileSync } from 'node:child_process';
 import { config } from './config.mjs';
 
-const { port, container, volume, image, owner, chatModel } = config;
+const { port, container, volume, image, chatModel } = config;
+// Copy the owner now so a missing N8N_DEMO_PASSWORD fails before Docker runs.
+const owner = { ...config.owner };
 const base = `http://localhost:${port}`;
 
 function docker(...args) {
@@ -48,7 +50,7 @@ quiet(() => docker('rm', '-f', container));
 quiet(() => docker('volume', 'rm', volume));
 docker(
 	'run', '-d', '--name', container,
-	// Loopback only: the owner password is committed, so keep it off the LAN.
+	// Loopback only: keep the throwaway instance off the LAN.
 	'-p', `127.0.0.1:${port}:${port}`,
 	'-e', `N8N_PORT=${port}`,
 	'-e', 'N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true',
