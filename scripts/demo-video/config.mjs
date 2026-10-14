@@ -9,6 +9,12 @@ export const config = {
 	volume: env.N8N_DEMO_VOLUME ?? 'n8n_demo',
 	image: env.N8N_DEMO_IMAGE ?? 'docker.n8n.io/n8nio/n8n',
 	packageSpec: env.N8N_DEMO_PACKAGE ?? 'n8n-nodes-curlshot@0.1.1',
+	// The version n8n shows after install, e.g. "0.1.1" from "n8n-nodes-curlshot@0.1.1".
+	get packageVersion() {
+		const version = this.packageSpec.match(/@(\d+\.\d+\.\d+\S*)$/)?.[1];
+		if (!version) throw new Error('N8N_DEMO_PACKAGE must pin an exact version, e.g. n8n-nodes-curlshot@0.1.1.');
+		return version;
+	},
 	// Throwaway owner of the throwaway instance.
 	owner: {
 		email: 'demo@curlshot.com',

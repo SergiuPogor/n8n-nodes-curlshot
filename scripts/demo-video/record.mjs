@@ -1,7 +1,7 @@
 // Records the n8n verification demo in ONE continuous take: one browser
 // context, one `recordVideo`, no cuts. Run `node setup.mjs` first.
 //
-// Shown on camera: install n8n-nodes-curlshot@0.1.1 from npm, the credential
+// Shown on camera: install n8n-nodes-curlshot (N8N_DEMO_PACKAGE) from npm, the credential
 // test, Take a screenshot (binary view), Generate a PDF (binary view), and an
 // AI Agent calling the CurlShot Tool, with the tool call opened in the logs.
 //
@@ -12,6 +12,7 @@ import { chromium } from 'playwright';
 import { config, readAccessKey } from './config.mjs';
 
 const base = `http://localhost:${config.port}`;
+const { packageVersion: version } = config;
 const accessKey = readAccessKey();
 const debug = process.env.N8N_DEMO_DEBUG === '1';
 
@@ -113,7 +114,13 @@ async function caption(text, sub = '', where = 'bottom') {
 			const el = window.__demoCaption;
 			if (!el) return;
 			el.className = w === 'top' ? 'top' : '';
-			el.innerHTML = t ? `${t}${s ? `<small>${s}</small>` : ''}` : '';
+			// Text nodes only: captions never parse as HTML.
+			el.textContent = t;
+			if (t && s) {
+				const small = document.createElement('small');
+				small.textContent = s;
+				el.append(small);
+			}
 		},
 		[text, sub, where],
 	);
@@ -196,10 +203,20 @@ async function inOutputPanel(locator) {
 	}
 	return null;
 }
+// Like inOutputPanel, but waits for the match and fails with a clear error.
+async function outputPanelItem(locator, what) {
+	for (let waited = 0; waited < 15_000; waited += 500) {
+		const found = await inOutputPanel(locator);
+		if (found) return found;
+		await pause(500);
+	}
+	throw new Error(`${what} did not appear in the output panel`);
+}
 
 // The output "+" handle closest to the node with this label.
 async function plusNear(label) {
 	const node = await page.getByText(label, { exact: true }).locator('visible=true').first().boundingBox();
+	if (!node) throw new Error(`plusNear: no visible node labelled "${label}"`);
 	const pluses = byTest('canvas-handle-plus').locator('visible=true');
 	let best = null;
 	let bestDist = Infinity;
@@ -212,6 +229,7 @@ async function plusNear(label) {
 			best = pluses.nth(i);
 		}
 	}
+	if (!best) throw new Error(`plusNear: no "+" handle near "${label}"`);
 	return best;
 }
 async function closeNdv() {
@@ -234,12 +252,12 @@ try {
 		await page.goto(`${base}/home/workflows`);
 		await page.getByText('Overview', { exact: true }).first().waitFor({ state: 'attached' }).catch(() => {});
 		await pause(1200);
-		await caption('CurlShot node for n8n: n8n-nodes-curlshot 0.1.1', 'A fresh, self-hosted n8n. The node is not installed yet.');
+		await caption(`CurlShot node for n8n: n8n-nodes-curlshot ${version}`, 'A fresh, self-hosted n8n. The node is not installed yet.');
 		await pause(4500);
 	});
 
 	await step('install', async () => {
-		await caption('1. Install the node from npm', 'Settings → Community nodes → Install, version 0.1.1');
+		await caption('1. Install the node from npm', `Settings → Community nodes → Install, version ${version}`);
 		await click(page.getByRole('menuitem', { name: 'Settings' }).locator('visible=true').first(), 1200);
 		await click(page.getByRole('menuitem', { name: 'Community nodes' }), 1200);
 		await click(page.getByRole('button', { name: 'Install a community node' }), 900);
@@ -249,9 +267,8 @@ try {
 		await page.getByText('n8n-nodes-curlshot', { exact: true }).waitFor({ timeout: 120_000 });
 		await page.locator('[role="dialog"]').waitFor({ state: 'hidden', timeout: 60_000 }).catch(() => {});
 		await pause(1200);
-		const version = page.getByText(/v0\.1\.1/).last();
-		await moveTo(version);
-		await caption('1. Installed: n8n-nodes-curlshot v0.1.1', 'Nodes: CurlShot and CurlShot Trigger');
+		await moveTo(page.getByText(`v${version}`).last());
+		await caption(`1. Installed: n8n-nodes-curlshot v${version}`, 'Nodes: CurlShot and CurlShot Trigger');
 		await pause(3500);
 	});
 
@@ -265,7 +282,7 @@ try {
 		await click(byTest('canvas-handle-plus').first(), 900);
 		await searchNode('CurlShot');
 		await click(visibleText('CurlShot'), 1500);
-		await caption('2. The CurlShot node and its actions', 'Package version 0.1.1 shown at the bottom of the panel');
+		await caption('2. The CurlShot node and its actions', `Package version ${version} shown at the bottom of the panel`);
 		await moveTo(page.getByText(/Package version/).first());
 		await pause(2500);
 		await click(visibleText('Take a screenshot'), 1500);
@@ -316,7 +333,7 @@ try {
 
 	await step('screenshot binary', async () => {
 		await caption('4. The screenshot comes back as binary data', 'Ready for Slack, Google Drive, S3, email…');
-		await click(await inOutputPanel(byTest('ndv-run-data-display-mode').getByText('Binary', { exact: true })), 1200);
+		await click(await outputPanelItem(byTest('ndv-run-data-display-mode').getByText('Binary', { exact: true }), 'The Binary tab'), 1200);
 		await viewBinary();
 	});
 
@@ -330,7 +347,7 @@ try {
 		await type(byTest('parameter-input-url').locator('input, textarea, [contenteditable]').first(), 'https://example.com');
 		await executeStep();
 		await pause(1500);
-		await click(await inOutputPanel(byTest('ndv-run-data-display-mode').getByText('Binary', { exact: true })), 1200);
+		await click(await outputPanelItem(byTest('ndv-run-data-display-mode').getByText('Binary', { exact: true }), 'The Binary tab'), 1200);
 		await caption('5. The PDF, as binary data', 'application/pdf');
 		await viewBinary();
 		await closeNdv();
@@ -419,12 +436,26 @@ async function viewBinary() {
 	const popup = context.waitForEvent('page', { timeout: 4000 }).catch(() => null);
 	await click(view, 500);
 	const tab = await popup;
+	let frame = null;
 	if (tab) {
-		// n8n opened the file in a new tab: the recording follows only the
-		// original page, so show it in-page instead.
+		// n8n opened the file in a new tab, but only the original page is
+		// recorded: show the same URL in an overlay on that page instead.
+		const url = tab.url();
 		await tab.close();
+		frame = await page.evaluateHandle((src) => {
+			const el = document.createElement('iframe');
+			el.src = src;
+			el.style.cssText = 'position:fixed;inset:60px 120px 180px;z-index:2147483640;width:calc(100% - 240px);' +
+				'height:calc(100% - 240px);border:0;border-radius:12px;background:#fff;box-shadow:0 12px 48px rgba(0,0,0,.4)';
+			document.body.appendChild(el);
+			return el;
+		}, url);
 	}
 	await pause(4500);
+	if (frame) {
+		await frame.evaluate((el) => el.remove());
+		return;
+	}
 	const close = page.locator('[data-test-id="binary-data-view-close"], .binary-data-window-back, button:has-text("Back to list")').first();
 	if ((await close.count()) > 0) await click(close, 800);
 	else await page.keyboard.press('Escape');
