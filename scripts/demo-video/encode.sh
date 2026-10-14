@@ -22,9 +22,13 @@ out="${in%.webm}.mp4"
 # Playwright webm files often lack a duration header: read it from a decode pass.
 duration=$(ffmpeg -nostats -i "$in" -f null - 2>&1 | sed -n 's/.*time=\([0-9:.]*\).*/\1/p' | tail -1 \
 	| awk -F: '{ print $1 * 3600 + $2 * 60 + $3 }')
+if [ -z "$duration" ]; then
+	echo "Could not read the duration of $in (ffmpeg printed no time=)." >&2
+	exit 1
+fi
 length=$(awk -v d="$duration" -v s="$start" -v e="$end_trim" 'BEGIN { print d - s - e }')
 if ! awk -v l="$length" 'BEGIN { exit !(l > 0) }'; then
-	echo "Nothing left to encode: the take is ${duration:-?} s, trimming $start + $end_trim s." >&2
+	echo "Nothing left to encode: the take is $duration s, trimming $start + $end_trim s." >&2
 	exit 1
 fi
 
