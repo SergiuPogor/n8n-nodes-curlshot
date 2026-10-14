@@ -18,8 +18,10 @@ ripples show what is clicked. Playwright records the whole run with one
 
 - Docker (runs `docker.n8n.io/n8nio/n8n`)
 - [Ollama](https://ollama.com) with a tool-calling model: `ollama pull qwen2.5:7b`
+  (on Linux, start it with `OLLAMA_HOST=0.0.0.0` so the n8n container can reach it
+  through `host.docker.internal`; `setup.mjs` maps that name to the host gateway)
 - Google Chrome (or set `N8N_DEMO_BROWSER=chromium` after `npx playwright install chromium`)
-- ffmpeg
+- ffmpeg (and `awk`, used by `encode.sh`)
 - a CurlShot access key made for the recording. Revoke it afterwards.
 
 ## Record

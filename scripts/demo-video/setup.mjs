@@ -52,6 +52,9 @@ docker(
 	'run', '-d', '--name', container,
 	// Loopback only: keep the throwaway instance off the LAN.
 	'-p', `127.0.0.1:${port}:${port}`,
+	// Docker Desktop resolves host.docker.internal by itself; Docker Engine on
+	// Linux needs this mapping to reach Ollama on the host.
+	'--add-host', 'host.docker.internal:host-gateway',
 	'-e', `N8N_PORT=${port}`,
 	'-e', 'N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true',
 	'-e', 'N8N_DIAGNOSTICS_ENABLED=false',

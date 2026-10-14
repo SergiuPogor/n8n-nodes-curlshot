@@ -10,13 +10,17 @@ const EXAMPLES: Record<string, unknown> = {
 };
 const properties = new CurlShot().description.properties;
 
-/** Names a parameter may take: top-level fields, plus option names inside collections. */
+/**
+ * Names a parameter may take: top-level fields, plus the keys allowed inside
+ * collections (option names) and fixed collections (group names).
+ */
 function knownNames(list: INodeProperties[]): Map<string, Set<string>> {
 	const names = new Map<string, Set<string>>();
 	for (const property of list) {
 		const children = names.get(property.name) ?? new Set<string>();
 		for (const option of (property.options ?? []) as Array<{ name: string; value?: unknown }>) {
-			if (property.type === 'collection') children.add(option.name);
+			if (property.type === 'collection' || property.type === 'fixedCollection')
+				children.add(option.name);
 		}
 		names.set(property.name, children);
 	}
