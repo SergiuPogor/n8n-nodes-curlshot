@@ -7,6 +7,15 @@ updates:
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
+    ignore:
+      # TypeScript 7 (native compiler) breaks typescript-eslint 8, which
+      # @n8n/node-cli uses for `n8n-node lint`. Lift once node-cli supports it.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # ESLint 10 removed context.getFilename(), still used by
+      # eslint-plugin-n8n-nodes-base 1.x (pulled in by @n8n/node-cli).
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
