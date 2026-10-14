@@ -31,6 +31,7 @@ node setup.mjs                      # fresh n8n on :5678, owner + Ollama credent
 ollama run qwen2.5:7b "hi" >/dev/null   # load the model so the agent answers quickly
 CURLSHOT_KEY_FILE=/path/to/key.json node record.mjs   # writes out/take-<time>.webm
 sh encode.sh out/take-<time>.webm   # -> out/take-<time>.mp4 (H.264 1080p)
+node teardown.mjs                   # remove the n8n container and volume (they hold the key)
 ```
 
 `CURLSHOT_KEY_FILE` holds the access key, either bare or as JSON with an
@@ -39,7 +40,10 @@ pasted into n8n's password field (dots only), which is also blurred.
 
 The browser runs headless by default; set `N8N_DEMO_HEADED=1` to watch it.
 `setup.mjs` deletes and recreates the `n8n-demo` container and `n8n_demo`
-volume each time, so every take starts from a clean n8n.
+volume each time, so every take starts from a clean n8n. n8n listens on
+`127.0.0.1` only, because the owner password in `config.mjs` is committed.
+Run `node teardown.mjs` once you have a good take: the volume stores the
+CurlShot credential until it is removed.
 
 Other settings (see `config.mjs`): `N8N_DEMO_PORT`, `N8N_DEMO_PACKAGE`
 (default `n8n-nodes-curlshot@0.1.1`; bump it for a new version),
@@ -57,8 +61,8 @@ is readable in any frame.
 ## Keep it out of the npm package
 
 `n8n-node build` copies every `.png`/`.svg` it finds into `dist/`, and it only
-skips the top-level `node_modules`. Playwright ships such files, so a local
-build run while `scripts/demo-video/node_modules` exists would copy them into
-`dist/`. Releases are built by `publish.yml` on a clean checkout, so they are
-not affected. If you build locally after recording, delete
-`scripts/demo-video/node_modules` first.
+skips the top-level `node_modules`. So a local build copies Playwright's icons
+from `scripts/demo-video/node_modules` and failure screenshots from
+`scripts/demo-video/out/` into `dist/scripts/`. `package.json` excludes
+`dist/scripts` from `files`, so none of it reaches the npm package. Releases are
+built by `publish.yml` on a clean checkout anyway.

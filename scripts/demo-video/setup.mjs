@@ -48,7 +48,8 @@ quiet(() => docker('rm', '-f', container));
 quiet(() => docker('volume', 'rm', volume));
 docker(
 	'run', '-d', '--name', container,
-	'-p', `${port}:${port}`,
+	// Loopback only: the owner password is committed, so keep it off the LAN.
+	'-p', `127.0.0.1:${port}:${port}`,
 	'-e', `N8N_PORT=${port}`,
 	'-e', 'N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true',
 	'-e', 'N8N_DIAGNOSTICS_ENABLED=false',
